@@ -1,0 +1,92 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  userId    String   @id @default(uuid()) @map("user_id") @db.Uuid
+  email     String   @unique @map("email")
+  password  String   @map("password")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  reservations Reservation[]
+  orders       Order[]
+
+  @@map("user")
+}
+
+model Product {
+  productId    String   @id @default(uuid()) @map("product_id") @db.Uuid
+  productName  String   @map("product_name")
+  productStock Int      @map("product_stock")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  reservations  Reservation[]
+  orders        Order[]
+  inventoryLogs InventoryLog[]
+
+  @@map("product")
+}
+
+enum ReservationStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+model Reservation {
+  reservationId     String            @id @default(uuid()) @map("reservation_id") @db.Uuid
+  reservationStatus ReservationStatus @map("reservation_status")
+  userId            String            @map("user_id") @db.Uuid
+  productId         String            @map("product_id") @db.Uuid
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
+  order   Order?
+
+  @@map("reservation")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  orderId       String      @id @default(uuid()) @map("order_id") @db.Uuid
+  orderStatus   OrderStatus @map("order_status")
+  userId        String      @map("user_id") @db.Uuid
+  productId     String      @map("product_id") @db.Uuid
+  reservationId String      @unique @map("reservation_id") @db.Uuid
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  user        User        @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [productId], onDelete: Cascade)
+  reservation Reservation @relation(fields: [reservationId], references: [reservationId], onDelete: Cascade)
+
+  @@map("order")
+}
+
+model InventoryLog {
+  inventoryLogId  String   @id @default(uuid()) @map("inventory_log_id") @db.Uuid
+  productId       String   @map("product_id") @db.Uuid
+  inventoryReason String   @map("inventory_reason")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
+
+  @@map("inventory_log")
+}
