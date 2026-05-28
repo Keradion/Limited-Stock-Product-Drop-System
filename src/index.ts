@@ -1,15 +1,14 @@
 import { createApp } from "./app.js";
+import { config } from "./config/env.js";
 import { prisma } from "./db.js";
 import { connectRedis, disconnectRedis } from "./redis.js";
-
-const PORT = Number(process.env.PORT) || 3001;
 
 async function start() {
   await connectRedis();
 
   const app = createApp();
-  const server = app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const server = app.listen(config.port, () => {
+    console.log(`Server running on http://localhost:${config.port}`);
   });
 
   async function gracefulShutdown(signal: string) {
@@ -32,7 +31,7 @@ async function start() {
     setTimeout(() => {
       console.error("Forced shutdown due to timeout.");
       process.exit(1);
-    }, 10000);
+    }, config.shutdownTimeoutMs);
   }
 
   process.on("SIGINT", () => gracefulShutdown("SIGINT"));

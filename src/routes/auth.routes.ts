@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../db.js";
 import { signToken } from "../lib/jwt.js";
+import { config } from "../config/env.js";
 import { validateBody } from "../middleware/validate.js";
 import { loginLimiter, registerLimiter } from "../middleware/rateLimit.js";
 import { loginSchema, registerSchema } from "../schemas/auth.schema.js";
@@ -17,7 +18,7 @@ authRouter.post("/register", registerLimiter, validateBody(registerSchema), asyn
     return;
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, config.bcryptSaltRounds);
   const user = await prisma.user.create({
     data: { email, password: hashedPassword },
   });

@@ -5,6 +5,7 @@ import {
 } from "express-rate-limit";
 import { RedisStore } from "rate-limit-redis";
 import type { Request } from "express";
+import { config } from "../config/env.js";
 import { redis } from "../redis.js";
 
 function createRedisStore(prefix: string): RedisStore {
@@ -38,32 +39,32 @@ function ipKey(req: Request): string {
 
 export const loginLimiter = rateLimit({
   ...baseOptions,
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
+  windowMs: config.rateLimit.login.windowMs,
+  limit: config.rateLimit.login.limit,
   keyGenerator: ipKey,
   store: createRedisStore("rl:login:"),
 });
 
 export const registerLimiter = rateLimit({
   ...baseOptions,
-  windowMs: 60 * 60 * 1000,
-  limit: 5,
+  windowMs: config.rateLimit.register.windowMs,
+  limit: config.rateLimit.register.limit,
   keyGenerator: ipKey,
   store: createRedisStore("rl:register:"),
 });
 
 export const reserveLimiter = rateLimit({
   ...baseOptions,
-  windowMs: 60 * 1000,
-  limit: 3,
+  windowMs: config.rateLimit.reserve.windowMs,
+  limit: config.rateLimit.reserve.limit,
   keyGenerator: (req: Request) => `user:${req.userId ?? ipKey(req)}`,
   store: createRedisStore("rl:reserve:"),
 });
 
 export const checkoutLimiter = rateLimit({
   ...baseOptions,
-  windowMs: 60 * 1000,
-  limit: 5,
+  windowMs: config.rateLimit.checkout.windowMs,
+  limit: config.rateLimit.checkout.limit,
   keyGenerator: (req: Request) => `user:${req.userId ?? ipKey(req)}`,
   store: createRedisStore("rl:checkout:"),
 });

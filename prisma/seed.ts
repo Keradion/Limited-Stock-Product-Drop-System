@@ -1,8 +1,20 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+const seedPassword = process.env.SEED_USER_PASSWORD;
+const bcryptSaltRounds = Number.parseInt(process.env.BCRYPT_SALT_ROUNDS ?? "", 10);
+
+if (!seedPassword) {
+  throw new Error("Missing required environment variable: SEED_USER_PASSWORD");
+}
+
+if (Number.isNaN(bcryptSaltRounds)) {
+  throw new Error("Missing or invalid environment variable: BCRYPT_SALT_ROUNDS");
+}
+
 const prisma = new PrismaClient();
-const passwordHash = await bcrypt.hash("password123", 10);
+const passwordHash = await bcrypt.hash(seedPassword, bcryptSaltRounds);
 
 async function main() {
   await prisma.order.deleteMany();
