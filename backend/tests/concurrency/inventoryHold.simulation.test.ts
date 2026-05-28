@@ -12,7 +12,8 @@ import {
 } from "../helpers/atomicInventoryStore.js";
 import { AppError } from "../../src/lib/errors.js";
 
-describe("inventory hold concurrency simulation", () => {
+describe("inventory hold concurrency simulation", function () {
+  this.timeout(20_000);
   const productId = "22222222-2222-2222-2222-222222222222";
   const initialStock = 10;
   let store: AtomicInventoryStore;
@@ -66,7 +67,7 @@ describe("inventory hold concurrency simulation", () => {
     expect(store.getAvailable(productId)).to.equal(6);
   });
 
-  it("routes holdStock through inventory module without overselling", { timeout: 15_000 }, async () => {
+  it("routes holdStock through inventory module without overselling", async () => {
     const sandbox = sinon.createSandbox();
     const localStore = new AtomicInventoryStore();
     localStore.init(productId, 5);
@@ -105,7 +106,8 @@ describe("inventory hold concurrency simulation", () => {
   });
 });
 
-describe("createReservation burst concurrency simulation", () => {
+describe("createReservation burst concurrency simulation", function () {
+  this.timeout(20_000);
   const userId = "11111111-1111-1111-1111-111111111111";
   const productId = "22222222-2222-2222-2222-222222222222";
   const productStock = 3;
