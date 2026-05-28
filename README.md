@@ -117,7 +117,7 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 | GitHub | _add repo URL_ |
 | Hosted (Pxxl) | _add https://pxxl.app/ URL_ |
 | Loom (5–8 min) | _add video URL_ |
-| Architecture diagram | _add image or link (see `docs/` if checked in)_ |
+| ER diagram | [DrawSQL — Limited Stock Product Drop System](https://drawsql.app/teams/daniel-shitaye/diagrams/limted-stock-product-drop-system) |
 
 ### Stack (reference)
 
