@@ -30,12 +30,19 @@ export const config = {
   logLevel: requireEnv("LOG_LEVEL"),
   serviceName: requireEnv("SERVICE_NAME"),
   requestLogSkipPaths: parseListEnv("REQUEST_LOG_SKIP_PATHS"),
+  redis: {
+    url: requireEnv("REDIS_URL"),
+  },
   jwt: {
     secret: requireEnv("JWT_SECRET"),
     expiresIn: requireEnv("JWT_EXPIRES_IN") as SignOptions["expiresIn"],
   },
   bcryptSaltRounds: requireIntEnv("BCRYPT_SALT_ROUNDS"),
   shutdownTimeoutMs: requireIntEnv("SHUTDOWN_TIMEOUT_MS"),
+  reservation: {
+    ttlMs: requireIntEnv("RESERVATION_TTL_MS"),
+    expiryQueueName: requireEnv("RESERVATION_EXPIRY_QUEUE_NAME"),
+  },
   rateLimit: {
     login: {
       windowMs: requireIntEnv("RATE_LIMIT_LOGIN_WINDOW_MS"),

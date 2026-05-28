@@ -2,11 +2,17 @@ import { createApp } from "./app.js";
 import { config } from "./config/env.js";
 import { prisma } from "./db.js";
 import { logger } from "./lib/logger.js";
+import { closeReservationExpiryQueue } from "./queues/reservation.queue.js";
 import { connectRedis, disconnectRedis } from "./redis.js";
+import {
+  startReservationExpiryWorker,
+  stopReservationExpiryWorker,
+} from "./workers/reservation.worker.js";
 
 async function start() {
   await connectRedis();
 
+  const expiryWorker = startReservationExpiryWorker();
   const app = createApp();
   const server = app.listen(config.port, () => {
     logger.info(`Server running on http://localhost:${config.port}`);
@@ -18,6 +24,10 @@ async function start() {
     server.close(async () => {
       logger.info("Express server closed.");
       try {
+        await stopReservationExpiryWorker(expiryWorker);
+        logger.info("Reservation expiry worker stopped.");
+        await closeReservationExpiryQueue();
+        logger.info("Reservation expiry queue closed.");
         await disconnectRedis();
         logger.info("Redis client disconnected.");
         await prisma.$disconnect();

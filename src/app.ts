@@ -4,6 +4,7 @@ import { redis } from "./redis.js";
 import { reserveRouter } from "./routes/reserve.routes.js";
 import { checkoutRouter } from "./routes/checkout.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
+import { metricsRouter } from "./routes/metrics.routes.js";
 import { authenticate } from "./middleware/auth.js";
 import { handleInvalidJson } from "./middleware/error.js";
 import { errorLogger } from "./middleware/errorLogger.js";
@@ -47,6 +48,9 @@ export function createApp(): Express {
       uptime: process.uptime(),
     });
   });
+
+  // Process metrics for monitoring tools
+  app.use("/metrics", metricsRouter);
 
   app.use("/api/auth", authRouter);
   app.use("/api/reserve", authenticate, reserveLimiter, reserveRouter);
