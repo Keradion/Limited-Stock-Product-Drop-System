@@ -6,6 +6,7 @@ import { checkoutRouter } from "./routes/checkout.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { authenticate } from "./middleware/auth.js";
 import { handleInvalidJson } from "./middleware/error.js";
+import { errorLogger } from "./middleware/errorLogger.js";
 import { checkoutLimiter, reserveLimiter } from "./middleware/rateLimit.js";
 
 export function createApp(): Express {
@@ -48,6 +49,8 @@ export function createApp(): Express {
   app.use("/api/auth", authRouter);
   app.use("/api/reserve", authenticate, reserveLimiter, reserveRouter);
   app.use("/api/checkout", authenticate, checkoutLimiter, checkoutRouter);
+
+  app.use(errorLogger);
 
   return app;
 }

@@ -24,6 +24,7 @@
     "jsonwebtoken": "^9.0.3",
     "rate-limit-redis": "^5.0.0",
     "redis": "^6.0.0",
+    "winston": "^3.19.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

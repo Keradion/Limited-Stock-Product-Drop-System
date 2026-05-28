@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { config } from "./config/env.js";
 import { prisma } from "./db.js";
+import { logger } from "./lib/logger.js";
 import { connectRedis, disconnectRedis } from "./redis.js";
 
 async function start() {
@@ -8,28 +9,28 @@ async function start() {
 
   const app = createApp();
   const server = app.listen(config.port, () => {
-    console.log(`Server running on http://localhost:${config.port}`);
+    logger.info(`Server running on http://localhost:${config.port}`);
   });
 
   async function gracefulShutdown(signal: string) {
-    console.log(`Received ${signal}. Starting graceful shutdown...`);
+    logger.info(`Received ${signal}. Starting graceful shutdown...`);
 
     server.close(async () => {
-      console.log("Express server closed.");
+      logger.info("Express server closed.");
       try {
         await disconnectRedis();
-        console.log("Redis client disconnected.");
+        logger.info("Redis client disconnected.");
         await prisma.$disconnect();
-        console.log("Prisma client disconnected.");
+        logger.info("Prisma client disconnected.");
         process.exit(0);
       } catch (err) {
-        console.error("Error during shutdown:", err);
+        logger.error("Error during shutdown", { err });
         process.exit(1);
       }
     });
 
     setTimeout(() => {
-      console.error("Forced shutdown due to timeout.");
+      logger.error("Forced shutdown due to timeout.");
       process.exit(1);
     }, config.shutdownTimeoutMs);
   }
@@ -39,6 +40,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  console.error("Failed to start server:", err);
+  logger.error("Failed to start server", { err });
   process.exit(1);
 });

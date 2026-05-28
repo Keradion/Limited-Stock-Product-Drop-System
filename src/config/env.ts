@@ -19,6 +19,9 @@ function requireIntEnv(key: string): number {
 
 export const config = {
   port: requireIntEnv("PORT"),
+  nodeEnv: requireEnv("NODE_ENV"),
+  logLevel: requireEnv("LOG_LEVEL"),
+  serviceName: requireEnv("SERVICE_NAME"),
   jwt: {
     secret: requireEnv("JWT_SECRET"),
     expiresIn: requireEnv("JWT_EXPIRES_IN") as SignOptions["expiresIn"],
