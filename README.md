@@ -45,3 +45,16 @@
 * **Reservation**: Belongs to one `User` and one `Product`. It can optionally link to one finalized `Order` to fulfill the secured stock.
 * **Order**: Belongs to one `User` and one `Product`, referencing the `Reservation` that secured the stock.
 * **InventoryLog**: Belongs to one `Product` to audit a specific stock adjustment event.
+
+---
+
+## Race Condition Handling
+
+Concurrent reserve requests are handled in three layers:
+
+1. **Redis Lua script (atomic hold)** — Stock checks and deductions run in a single Redis operation, so two simultaneous requests cannot both pass an availability check on the last unit.
+2. **Database transaction** — The reservation record is created inside a Prisma transaction so the hold is persisted consistently after Redis succeeds.
+3. **Compensating rollback** — If the DB write or Bull job scheduling fails after Redis holds stock, the hold is released and the reservation is cancelled.
+4. **Status-guarded expiry** — The expiry worker uses `updateMany` with `status = PENDING`, so only one process can expire a reservation (safe when expiry and checkout race later).
+
+Redis holds temporary availability; Postgres stores the reservation; Bull releases expired holds back to Redis.
