@@ -42,7 +42,11 @@ describe("createReservation", () => {
     updateManyStub = sandbox.stub().resolves({ count: 1 });
     transactionStub = sandbox.stub().callsFake(async (fn) => {
       const tx = {
+        product: {
+          findUnique: sandbox.stub().resolves(product),
+        },
         reservation: {
+          aggregate: sandbox.stub().resolves({ _sum: { quantity: 0 } }),
           create: sandbox.stub().resolves({
             reservationId: "33333333-3333-3333-3333-333333333333",
             userId,
@@ -121,6 +125,31 @@ describe("createReservation", () => {
     } catch (error) {
       expect((error as AppError).statusCode).to.equal(409);
     }
+  });
+
+  it("releases Redis hold when DB stock validation fails in the transaction", async () => {
+    transactionStub.callsFake(async (fn) => {
+      const tx = {
+        product: {
+          findUnique: sandbox.stub().resolves(product),
+        },
+        reservation: {
+          aggregate: sandbox.stub().resolves({ _sum: { quantity: 9 } }),
+          create: sandbox.stub(),
+        },
+      };
+      return fn(tx as never);
+    });
+
+    try {
+      await createReservation(userId, productId, quantity);
+      expect.fail("Expected AppError");
+    } catch (error) {
+      expect((error as AppError).statusCode).to.equal(409);
+    }
+
+    expect(releaseStockStub.calledOnceWith(productId, quantity)).to.equal(true);
+    expect(scheduleExpiryStub.called).to.equal(false);
   });
 
   it("creates a reservation and schedules expiry on success", async () => {

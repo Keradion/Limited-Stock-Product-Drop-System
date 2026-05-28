@@ -82,3 +82,14 @@ export async function releaseStock(productId: string, quantity: number): Promise
     arguments: [String(quantity)],
   });
 }
+
+/** Read live available units from Redis (null if the counter was never initialized). */
+export async function getRedisAvailableStock(productId: string): Promise<number | null> {
+  const raw = await redis.get(inventoryKey(productId));
+  if (raw === null) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}

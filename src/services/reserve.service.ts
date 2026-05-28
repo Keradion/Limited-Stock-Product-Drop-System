@@ -45,8 +45,32 @@ export async function createReservation(
   let reservationId: string | null = null;
 
   try {
-    // Stage 4: Persist the reservation inside a DB transaction
+    // Stage 4: Persist reservation after verifying DB stock inside one transaction
     const reservation = await prisma.$transaction(async (tx) => {
+      const currentProduct = await tx.product.findUnique({
+        where: { productId },
+      });
+
+      if (!currentProduct) {
+        throw new AppError("Product not found", 404);
+      }
+
+      const pending = await tx.reservation.aggregate({
+        where: {
+          productId,
+          reservationStatus: "PENDING",
+          expiresAt: { gt: new Date() },
+        },
+        _sum: { quantity: true },
+      });
+
+      const heldQuantity = pending._sum.quantity ?? 0;
+      const availableStock = currentProduct.productStock - heldQuantity;
+
+      if (availableStock < quantity) {
+        throw new AppError("Insufficient stock", 409);
+      }
+
       return tx.reservation.create({
         data: {
           userId,

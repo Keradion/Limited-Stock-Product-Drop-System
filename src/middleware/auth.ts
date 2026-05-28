@@ -1,11 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
+import { AppError } from "../lib/errors.js";
 import { verifyToken } from "../lib/jwt.js";
 
-export function authenticate(req: Request, res: Response, next: NextFunction): void {
+export function authenticate(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
 
   if (!header?.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Unauthorized" });
+    next(new AppError("Unauthorized", 401));
     return;
   }
 
@@ -16,6 +17,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     req.userId = payload.userId;
     next();
   } catch {
-    res.status(401).json({ error: "Invalid or expired token" });
+    next(new AppError("Invalid or expired token", 401));
   }
 }

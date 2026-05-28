@@ -65,6 +65,13 @@ export async function checkoutReservation(
       throw new AppError("Insufficient stock", 409);
     }
 
+    await tx.inventoryLog.create({
+      data: {
+        productId: reservation.productId,
+        inventoryReason: `Checkout completed: ${reservationId}, quantity ${reservation.quantity}`,
+      },
+    });
+
     return tx.order.create({
       data: {
         userId: reservation.userId,

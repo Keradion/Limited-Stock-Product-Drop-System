@@ -47,6 +47,9 @@ describe("checkout vs expiry concurrency simulation", () => {
               product: {
                 updateMany: sandbox.stub().resolves({ count: 1 }),
               },
+              inventoryLog: {
+                create: sandbox.stub().resolves({}),
+              },
               order: {
                 create: sandbox.stub().resolves({
                   orderId: "order-1",

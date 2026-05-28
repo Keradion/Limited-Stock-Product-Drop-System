@@ -1,6 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../db.js";
+import { AppError } from "../lib/errors.js";
 import { signToken } from "../lib/jwt.js";
 import { config } from "../config/env.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -19,8 +20,7 @@ authRouter.post(
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      res.status(409).json({ error: "Email already registered" });
-      return;
+      throw new AppError("Email already registered", 409);
     }
 
     const hashedPassword = await bcrypt.hash(password, config.bcryptSaltRounds);
@@ -42,14 +42,12 @@ authRouter.post(
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      res.status(401).json({ error: "Invalid email or password" });
-      return;
+      throw new AppError("Invalid email or password", 401);
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      res.status(401).json({ error: "Invalid email or password" });
-      return;
+      throw new AppError("Invalid email or password", 401);
     }
 
     const token = signToken({ userId: user.userId });

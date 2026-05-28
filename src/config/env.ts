@@ -24,9 +24,15 @@ function parseListEnv(key: string): string[] {
     .filter(Boolean);
 }
 
+function optionalEnv(key: string, fallback: string): string {
+  const value = process.env[key]?.trim();
+  return value && value.length > 0 ? value : fallback;
+}
+
 export const config = {
   port: requireIntEnv("PORT"),
   nodeEnv: requireEnv("NODE_ENV"),
+  corsOrigin: optionalEnv("CORS_ORIGIN", "http://localhost:5173"),
   logLevel: requireEnv("LOG_LEVEL"),
   serviceName: requireEnv("SERVICE_NAME"),
   requestLogSkipPaths: parseListEnv("REQUEST_LOG_SKIP_PATHS"),
@@ -42,6 +48,10 @@ export const config = {
   reservation: {
     ttlMs: requireIntEnv("RESERVATION_TTL_MS"),
     expiryQueueName: requireEnv("RESERVATION_EXPIRY_QUEUE_NAME"),
+  },
+  pagination: {
+    defaultPageSize: requireIntEnv("DEFAULT_PAGE_SIZE"),
+    maxPageSize: requireIntEnv("MAX_PAGE_SIZE"),
   },
   rateLimit: {
     login: {

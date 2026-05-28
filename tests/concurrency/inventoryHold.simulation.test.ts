@@ -105,12 +105,14 @@ describe("createReservation burst concurrency simulation", () => {
 
   let sandbox: SinonSandbox;
   let store: AtomicInventoryStore;
+  let pendingQuantity: number;
   let createReservation: typeof import("../../src/services/reserve.service.js").createReservation;
 
   beforeEach(async () => {
     sandbox = sinon.createSandbox();
     store = new AtomicInventoryStore();
     store.init(productId, productStock);
+    pendingQuantity = 0;
 
     let reservationCounter = 0;
 
@@ -129,14 +131,25 @@ describe("createReservation burst concurrency simulation", () => {
           },
           $transaction: sandbox.stub().callsFake(async (fn) => {
             const tx = {
+              product: {
+                findUnique: sandbox.stub().resolves({
+                  productId,
+                  productName: "Drop Item",
+                  productStock,
+                }),
+              },
               reservation: {
-                create: sandbox.stub().callsFake(async () => {
+                aggregate: sandbox.stub().callsFake(async () => ({
+                  _sum: { quantity: pendingQuantity },
+                })),
+                create: sandbox.stub().callsFake(async ({ data }: { data: { quantity: number } }) => {
+                  pendingQuantity += data.quantity;
                   reservationCounter += 1;
                   return {
                     reservationId: `res-${reservationCounter}`,
                     userId,
                     productId,
-                    quantity: 1,
+                    quantity: data.quantity,
                     reservationStatus: "PENDING",
                     expiresAt: new Date(Date.now() + 300_000),
                     createdAt: new Date(),
