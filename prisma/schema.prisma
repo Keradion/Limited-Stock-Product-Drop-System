@@ -46,6 +46,8 @@ model Reservation {
   reservationStatus ReservationStatus @map("reservation_status")
   userId            String            @map("user_id") @db.Uuid
   productId         String            @map("product_id") @db.Uuid
+  quantity          Int               @default(1) @map("quantity")
+  expiresAt         DateTime          @default(now()) @map("expires_at")
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")
 

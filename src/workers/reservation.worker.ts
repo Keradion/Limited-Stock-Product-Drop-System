@@ -6,7 +6,7 @@ import { prisma } from "../db.js";
 import type { ReservationExpiryJobData } from "../queues/reservation.queue.js";
 
 async function expireReservation(reservationId: string): Promise<void> {
-  // Stage 1: Mark reservation expired only if it is still pending (safe under concurrency)
+  // Stage 1: Expire the reservation if still pending (safe under concurrency with checkout)
   const expired = await prisma.$transaction(async (tx) => {
     const result = await tx.reservation.updateMany({
       where: {
@@ -21,20 +21,38 @@ async function expireReservation(reservationId: string): Promise<void> {
       return null;
     }
 
-    return tx.reservation.findUnique({
+    const reservation = await tx.reservation.findUnique({
       where: { reservationId },
       select: { productId: true, quantity: true },
     });
+
+    if (!reservation) {
+      return null;
+    }
+
+    // Stage 3: Log expiration event in the inventory audit trail
+    await tx.inventoryLog.create({
+      data: {
+        productId: reservation.productId,
+        inventoryReason: `Reservation expired: ${reservationId}`,
+      },
+    });
+
+    return reservation;
   });
 
   if (!expired) {
     return;
   }
 
-  // Stage 2: Return held units to the Redis available pool
+  // Stage 2: Restore held units back to the Redis available pool
   await releaseStock(expired.productId, expired.quantity);
 
-  logger.info("Reservation expired", { reservationId });
+  logger.info("Reservation expired", {
+    reservationId,
+    productId: expired.productId,
+    quantity: expired.quantity,
+  });
 }
 
 export function startReservationExpiryWorker(): Worker<ReservationExpiryJobData> {

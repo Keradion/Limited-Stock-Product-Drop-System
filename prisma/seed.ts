@@ -60,12 +60,17 @@ async function main() {
     })),
   });
 
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+  const expiredAt = new Date(Date.now() - 60 * 1000);
+
   const [aliceReservation, bobReservation] = await Promise.all([
     prisma.reservation.create({
       data: {
         reservationStatus: "PENDING",
         userId: alice.userId,
         productId: products[0].productId,
+        quantity: 1,
+        expiresAt,
       },
     }),
     prisma.reservation.create({
@@ -73,6 +78,8 @@ async function main() {
         reservationStatus: "COMPLETED",
         userId: bob.userId,
         productId: products[2].productId,
+        quantity: 1,
+        expiresAt,
       },
     }),
   ]);
@@ -82,6 +89,8 @@ async function main() {
       reservationStatus: "EXPIRED",
       userId: carol.userId,
       productId: products[4].productId,
+      quantity: 1,
+      expiresAt: expiredAt,
     },
   });
 

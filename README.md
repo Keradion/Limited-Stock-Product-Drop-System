@@ -17,6 +17,8 @@
 * reservation_status (enum)
 * user_id (uuid)
 * product_id (uuid)
+* quantity (int)
+* expires_at (datetime)
 * created_at (datetime)
 * updated_at (datetime)
 
@@ -57,4 +59,17 @@ Concurrent reserve requests are handled in three layers:
 3. **Compensating rollback** — If the DB write or Bull job scheduling fails after Redis holds stock, the hold is released and the reservation is cancelled.
 4. **Status-guarded expiry** — The expiry worker uses `updateMany` with `status = PENDING`, so only one process can expire a reservation (safe when expiry and checkout race later).
 
-Redis holds temporary availability; Postgres stores the reservation; Bull releases expired holds back to Redis.
+Redis holds temporary availability; Postgres stores the reservation; BullMQ releases expired holds back to Redis.
+
+### Reservation Expiry (BullMQ)
+
+On successful `POST /api/reserve`, a delayed job is scheduled for `RESERVATION_TTL_MS` (default 5 minutes). When it runs:
+
+1. Marks the reservation `EXPIRED` only if still `PENDING`
+2. Releases held quantity back to Redis
+
+Configured via `.env`:
+```
+RESERVATION_TTL_MS=300000
+RESERVATION_EXPIRY_QUEUE_NAME=reservation-expiry
+```

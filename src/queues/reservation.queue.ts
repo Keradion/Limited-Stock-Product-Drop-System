@@ -28,6 +28,13 @@ export async function scheduleReservationExpiry(
   );
 }
 
+export async function cancelReservationExpiry(reservationId: string): Promise<void> {
+  const job = await reservationExpiryQueue.getJob(reservationId);
+  if (job) {
+    await job.remove();
+  }
+}
+
 export async function closeReservationExpiryQueue(): Promise<void> {
   await reservationExpiryQueue.close();
 }
