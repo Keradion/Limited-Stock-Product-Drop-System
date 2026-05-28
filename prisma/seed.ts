@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const passwordHash = await bcrypt.hash("password123", 10);
 
 async function main() {
   await prisma.order.deleteMany();
@@ -11,13 +13,13 @@ async function main() {
 
   const [alice, bob, carol] = await Promise.all([
     prisma.user.create({
-      data: { email: "alice@example.com", password: "password123" },
+      data: { email: "alice@example.com", password: passwordHash },
     }),
     prisma.user.create({
-      data: { email: "bob@example.com", password: "password123" },
+      data: { email: "bob@example.com", password: passwordHash },
     }),
     prisma.user.create({
-      data: { email: "carol@example.com", password: "password123" },
+      data: { email: "carol@example.com", password: passwordHash },
     }),
   ]);
 
