@@ -21,6 +21,19 @@ export type ErrorLogContext = {
   statusCode: number;
 };
 
+export type RequestLogContext = {
+  method: string;
+  path: string;
+  statusCode: number;
+  durationMs: number;
+  userId?: string;
+  ip?: string;
+};
+
+export function logRequest(context: RequestLogContext): void {
+  logger.info("HTTP request", context);
+}
+
 export function logRequestError(err: unknown, context: ErrorLogContext): void {
   logger.error("Request error", {
     ...context,

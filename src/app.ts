@@ -7,6 +7,7 @@ import { authRouter } from "./routes/auth.routes.js";
 import { authenticate } from "./middleware/auth.js";
 import { handleInvalidJson } from "./middleware/error.js";
 import { errorLogger } from "./middleware/errorLogger.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 import { checkoutLimiter, reserveLimiter } from "./middleware/rateLimit.js";
 
 export function createApp(): Express {
@@ -14,6 +15,7 @@ export function createApp(): Express {
 
   app.use(express.json());
   app.use(handleInvalidJson);
+  app.use(requestLogger);
 
   app.get("/health", async (_req, res) => {
     let dbStatus = "unknown";

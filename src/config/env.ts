@@ -17,11 +17,19 @@ function requireIntEnv(key: string): number {
   return value;
 }
 
+function parseListEnv(key: string): string[] {
+  return requireEnv(key)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export const config = {
   port: requireIntEnv("PORT"),
   nodeEnv: requireEnv("NODE_ENV"),
   logLevel: requireEnv("LOG_LEVEL"),
   serviceName: requireEnv("SERVICE_NAME"),
+  requestLogSkipPaths: parseListEnv("REQUEST_LOG_SKIP_PATHS"),
   jwt: {
     secret: requireEnv("JWT_SECRET"),
     expiresIn: requireEnv("JWT_EXPIRES_IN") as SignOptions["expiresIn"],
