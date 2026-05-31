@@ -1,6 +1,3 @@
-
-## Step 1: Add More Servers (Horizontal Scaling)
-Right now: 1 server  
 # Limited Stock Product Drop System
 
 ![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
@@ -277,7 +274,3 @@ The codebase has **automated tests** that verify all of this works correctly —
 - **Postgres + Prisma** — reservations, orders, audit  
 - **BullMQ** — reservation expiry (`RESERVATION_TTL_MS`, default 5 min)  
 - **React + Vite** — drop page, checkout, stock polling
-
----
-
-Redeploy trigger: 2026-05-31T19:46:00Z
