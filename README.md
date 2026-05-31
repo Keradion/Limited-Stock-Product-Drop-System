@@ -277,3 +277,4 @@ The codebase has **automated tests** that verify all of this works correctly —
 
 Deployment note: frontend API base URL should point to `https://stock-backend.pxxl.click`.
 Redeploy note: refreshed on 2026-05-31.
+Deploy note: keep backend CORS aligned with the active frontend origin.
