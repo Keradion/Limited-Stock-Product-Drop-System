@@ -5,6 +5,9 @@ function readIntEnv(value: string | undefined, fallback: number): number {
 
 function readApiBaseUrl(value: string | undefined): string {
   const trimmed = (value ?? "").trim().replace(/\/+$/, "");
+  if (!trimmed && import.meta.env.PROD) {
+    return "https://limited-stock-drop.pxxl.click";
+  }
   return trimmed;
 }
 

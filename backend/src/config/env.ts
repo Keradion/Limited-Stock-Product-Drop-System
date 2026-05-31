@@ -40,7 +40,7 @@ function parseCorsOrigin(value: string): string[] | string {
 export const config = {
   port: requireIntEnv("PORT"),
   nodeEnv: requireEnv("NODE_ENV"),
-  corsOrigin: parseCorsOrigin(optionalEnv("CORS_ORIGIN", "http://localhost:5173")),
+  corsOrigin: parseCorsOrigin(optionalEnv("CORS_ORIGIN", "http://localhost:5173,https://front-stock.pxxl.click")),
   logLevel: requireEnv("LOG_LEVEL"),
   serviceName: requireEnv("SERVICE_NAME"),
   requestLogSkipPaths: parseListEnv("REQUEST_LOG_SKIP_PATHS"),
