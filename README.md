@@ -66,6 +66,28 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 
 ---
 
+## Architecture
+
+![Architecture Diagram](docs/architecture-diagram.png)
+
+The system has 4 layers:
+- **Client** — React + Vite frontend with custom hooks for polling and countdown
+- **API** — Express server handling auth (JWT), rate limiting, validation, and routing
+- **Services** — Business logic for reservations, checkout, and expiry
+- **Data** — PostgreSQL (source of truth) + Redis (fast atomic stock counter + job queue)
+
+A separate **BullMQ worker** runs in the background to auto-expire reservations after 5 minutes.
+
+---
+
+## Reservation Lifecycle
+
+![Reservation Lifecycle](docs/reservation-lifecycle.png)
+
+Every reservation flows through this state machine. The key safety rule: **status changes are only allowed FROM `PENDING`**, and database `updateMany` operations check `expiresAt > now()`. This ensures only one outcome wins per reservation, even under heavy concurrency.
+
+---
+
 # How It Works (In Plain English)
 
 ## How We Stop Two People Buying The Same Last Item
@@ -240,7 +262,7 @@ We achieve this through:
 
 It currently works great for a few hundred users at once. To handle thousands more, we'd add servers, split up Redis, and put a queue in front of everything.
 
-The codebase has **213 automated tests** that verify all of this works correctly — including tests that simulate 200 people clicking Buy at the exact same moment.
+The codebase has **automated tests** that verify all of this works correctly — including tests that simulate 200 people clicking Buy at the exact same moment.
 
 ---
 
@@ -248,7 +270,7 @@ The codebase has **213 automated tests** that verify all of this works correctly
 
 | Item | Link |
 |------|------|
-| GitHub | _add repo URL_ |
+| GitHub |https://github.com/Keradion/Limited-Stock-Product-Drop-System.git |
 | Hosted (Pxxl) | _add https://pxxl.app/ URL_ |
 | Loom (5–8 min) | _add video URL_ — script: [docs/loom-script.md](docs/loom-script.md) |
 | Architecture diagram | [docs/architecture.md](docs/architecture.md) (Mermaid) |
