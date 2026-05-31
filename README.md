@@ -66,7 +66,7 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 
 ---
 
-# How It Works (In Plain English)
+# How It Works 
 
 ## How We Stop Two People Buying The Same Last Item
 
