@@ -249,7 +249,7 @@ The codebase has **automated tests** that verify all of this works correctly —
 | Item | Link |
 |------|------|
 | GitHub |https://github.com/Keradion/Limited-Stock-Product-Drop-System.git |
-| Hosted (Pxxl) | _add https://pxxl.app/ URL_ |
+| Hosted (Pxxl) | https://front-stock.pxxl.click |
 | Loom (5–8 min) | _add video URL_ — script: [docs/loom-script.md](docs/loom-script.md) |
 | Architecture diagram | [docs/architecture.md](docs/architecture.md) (Mermaid) |
 | ER diagram | [DrawSQL — Limited Stock Product Drop System](https://drawsql.app/teams/daniel-shitaye/diagrams/limted-stock-product-drop-system) |
