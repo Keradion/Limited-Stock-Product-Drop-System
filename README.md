@@ -66,6 +66,7 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 
 ---
 
+<<<<<<< HEAD
 ## Architecture
 
 ![Architecture Diagram](docs/architecture-diagram.png)
@@ -89,6 +90,9 @@ Every reservation flows through this state machine. The key safety rule: **statu
 ---
 
 # How It Works (In Plain English)
+=======
+# How It Works 
+>>>>>>> cce2750ec4bd8f98987620aabb1346a86ca138a0
 
 ## How We Stop Two People Buying The Same Last Item
 
