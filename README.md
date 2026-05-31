@@ -1,6 +1,13 @@
 # Limited Stock Product Drop System
 
-Monorepo for a limited-product drop: **Express API** + **React UI**.
+![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
+![React](https://img.shields.io/badge/React-18.x-blue.svg)
+![Express](https://img.shields.io/badge/Express-4.x-lightgrey.svg)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-blueviolet.svg)
+![Redis](https://img.shields.io/badge/Redis-In--Memory-red.svg)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue.svg)
+
+Monorepo for a high-concurrency limited-product drop: **Express API** + **React UI**.
 
 ## Project layout
 
@@ -13,6 +20,13 @@ Monorepo for a limited-product drop: **Express API** + **React UI**.
 ├── package.json      # Root scripts (delegates to backend / frontend)
 └── README.md
 ```
+
+## Prerequisites
+
+Before running the application, make sure you have the following installed:
+- **Node.js** (v18 or higher)
+- **PostgreSQL** (running and accessible)
+- **Redis** (running and accessible)
 
 ## Quick start
 
