@@ -6,7 +6,7 @@ function readIntEnv(value: string | undefined, fallback: number): number {
 function readApiBaseUrl(value: string | undefined): string {
   const trimmed = (value ?? "").trim().replace(/\/+$/, "");
   if (!trimmed && import.meta.env.PROD) {
-    return "https://limited-stock-drop.pxxl.click";
+    return "https://stock-backend.pxxl.click";
   }
 
   // If someone accidentally sets a full path (e.g. "https://host.example/health"),
