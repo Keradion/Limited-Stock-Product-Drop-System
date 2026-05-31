@@ -2,7 +2,6 @@ import { createClient, type RedisClientType } from "redis";
 import "dotenv/config";
 
 declare global {
-  // eslint-disable-next-line no-var
   var redis: RedisClientType | undefined;
 }
 

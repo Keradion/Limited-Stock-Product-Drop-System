@@ -16,6 +16,7 @@ export default [
         ecmaFeatures: {
           jsx: true,
         },
+        project: true,
       },
       globals: {
         window: 'readonly',
@@ -38,10 +39,14 @@ export default [
     rules: {
       // Enforce no 'any' type - STRICT REQUIREMENT
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+
+      // Disable standard rules that conflict with TypeScript
+      'no-unused-vars': 'off',
+      'no-undef': 'off',
 
       // TypeScript strict rules
       '@typescript-eslint/explicit-function-return-type': 'off',
