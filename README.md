@@ -66,33 +66,7 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 
 ---
 
-<<<<<<< HEAD
-## Architecture
-
-![Architecture Diagram](docs/architecture-diagram.png)
-
-The system has 4 layers:
-- **Client** — React + Vite frontend with custom hooks for polling and countdown
-- **API** — Express server handling auth (JWT), rate limiting, validation, and routing
-- **Services** — Business logic for reservations, checkout, and expiry
-- **Data** — PostgreSQL (source of truth) + Redis (fast atomic stock counter + job queue)
-
-A separate **BullMQ worker** runs in the background to auto-expire reservations after 5 minutes.
-
----
-
-## Reservation Lifecycle
-
-![Reservation Lifecycle](docs/reservation-lifecycle.png)
-
-Every reservation flows through this state machine. The key safety rule: **status changes are only allowed FROM `PENDING`**, and database `updateMany` operations check `expiresAt > now()`. This ensures only one outcome wins per reservation, even under heavy concurrency.
-
----
-
-# How It Works (In Plain English)
-=======
-# How It Works 
->>>>>>> cce2750ec4bd8f98987620aabb1346a86ca138a0
+# How It Works
 
 ## How We Stop Two People Buying The Same Last Item
 

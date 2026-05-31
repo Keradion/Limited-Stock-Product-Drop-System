@@ -36,7 +36,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     : timeoutController.signal;
 
   try {
-    const response = await fetch(path, {
+    const url = path.startsWith("http")
+      ? path
+      : `${appConfig.apiBaseUrl}${path}`;
+
+    const response = await fetch(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,

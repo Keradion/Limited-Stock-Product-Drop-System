@@ -29,10 +29,18 @@ function optionalEnv(key: string, fallback: string): string {
   return value && value.length > 0 ? value : fallback;
 }
 
+function parseCorsOrigin(value: string): string[] | string {
+  const items = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return items.length > 1 ? items : items[0] ?? value;
+}
+
 export const config = {
   port: requireIntEnv("PORT"),
   nodeEnv: requireEnv("NODE_ENV"),
-  corsOrigin: optionalEnv("CORS_ORIGIN", "http://localhost:5173"),
+  corsOrigin: parseCorsOrigin(optionalEnv("CORS_ORIGIN", "http://localhost:5173")),
   logLevel: requireEnv("LOG_LEVEL"),
   serviceName: requireEnv("SERVICE_NAME"),
   requestLogSkipPaths: parseListEnv("REQUEST_LOG_SKIP_PATHS"),
