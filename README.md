@@ -274,3 +274,5 @@ The codebase has **automated tests** that verify all of this works correctly —
 - **Postgres + Prisma** — reservations, orders, audit  
 - **BullMQ** — reservation expiry (`RESERVATION_TTL_MS`, default 5 min)  
 - **React + Vite** — drop page, checkout, stock polling
+
+Deployment note: frontend API base URL should point to `https://stock-backend.pxxl.click`.
