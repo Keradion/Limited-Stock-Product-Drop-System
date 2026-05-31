@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "serve": "^14.2.6"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
