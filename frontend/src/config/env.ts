@@ -8,7 +8,16 @@ function readApiBaseUrl(value: string | undefined): string {
   if (!trimmed && import.meta.env.PROD) {
     return "https://limited-stock-drop.pxxl.click";
   }
-  return trimmed;
+
+  // If someone accidentally sets a full path (e.g. "https://host.example/health"),
+  // use only the origin (`https://host.example`) so requests to `/api/...` are formed correctly.
+  try {
+    const url = new URL(trimmed);
+    return url.origin;
+  } catch {
+    // Not an absolute URL — return as-is (the existing behavior)
+    return trimmed;
+  }
 }
 
 export const appConfig = {
