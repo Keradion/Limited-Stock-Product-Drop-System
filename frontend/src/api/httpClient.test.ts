@@ -115,4 +115,181 @@ describe("apiRequest", () => {
     expect(result).to.be.instanceOf(DOMException);
     expect((result as DOMException).name).to.equal("AbortError");
   });
+
+  it("handles 204 No Content responses", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      statusText: "No Content",
+    } as Response);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await apiRequest<void>("/api/reservations/cancel", {
+      method: "POST",
+    });
+
+    expect(result).to.be.undefined;
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("handles errors without JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        statusText: "Service Unavailable",
+        json: () => Promise.reject(new Error("Not JSON")),
+      } as Response),
+    );
+
+    try {
+      await apiRequest("/api/products");
+      expect.fail("Expected error");
+    } catch (error) {
+      expect(error).to.deep.equal({
+        error: "Service Unavailable",
+        statusCode: 503,
+      });
+    }
+  });
+
+  it("merges external abort signal with timeout signal", async () => {
+    vi.useFakeTimers();
+
+    const externalController = new AbortController();
+    let capturedSignal: AbortSignal | undefined;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init?: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            capturedSignal = init?.signal;
+            init?.signal?.addEventListener("abort", () => {
+              reject(new DOMException("Aborted", "AbortError"));
+            });
+          }),
+      ),
+    );
+
+    const pending = apiRequest("/api/products", {
+      signal: externalController.signal,
+    }).catch((error: unknown) => error);
+
+    externalController.abort();
+
+    const result = await pending;
+    expect(result).to.be.instanceOf(DOMException);
+    expect((result as DOMException).name).to.equal("AbortError");
+    expect(capturedSignal?.aborted).to.equal(true);
+  });
+
+  it("aborts via timeout even when external signal is provided", async () => {
+    vi.useFakeTimers();
+
+    const externalController = new AbortController();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init?: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => {
+              reject(new DOMException("Aborted", "AbortError"));
+            });
+          }),
+      ),
+    );
+
+    const pending = apiRequest("/api/products", {
+      signal: externalController.signal,
+    }).catch((error: unknown) => error);
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    const result = await pending;
+    expect(result).to.be.instanceOf(DOMException);
+    expect((result as DOMException).name).to.equal("AbortError");
+  });
+
+  it("includes Content-Type header only when body is present", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mockJsonResponse(200, {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiRequest("/api/products");
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.headers).not.toHaveProperty("Content-Type");
+    expect(init.headers).toMatchObject({
+      Accept: "application/json",
+    });
+  });
+
+  it("clears timeout even when request fails", async () => {
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        mockJsonResponse(500, { error: "Internal Error", statusCode: 500 }),
+      ),
+    );
+
+    try {
+      await apiRequest("/api/products");
+      expect.fail("Expected error");
+    } catch {
+      // Expected error
+    }
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+
+  it("handles network errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+    );
+
+    try {
+      await apiRequest("/api/products");
+      expect.fail("Expected error");
+    } catch (error) {
+      expect(error).to.be.instanceOf(TypeError);
+      expect((error as TypeError).message).to.equal("Failed to fetch");
+    }
+  });
+
+  it("throws 401 error when auth is required but no token stored", async () => {
+    localStorage.clear();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      await apiRequest("/api/reservations", { auth: true });
+      expect.fail("Expected error");
+    } catch (error) {
+      expect(error).to.deep.equal({
+        error: "Not authenticated",
+        statusCode: 401,
+      });
+    }
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("properly formats request body as JSON", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mockJsonResponse(200, {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const requestBody = { productId: "prod-1", quantity: 5 };
+    await apiRequest("/api/reserve", {
+      method: "POST",
+      body: requestBody,
+    });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.body).to.equal(JSON.stringify(requestBody));
+  });
 });

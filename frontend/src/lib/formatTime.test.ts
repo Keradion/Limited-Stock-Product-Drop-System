@@ -20,6 +20,42 @@ describe("formatCountdown", () => {
     expect(formatCountdown(1_500)).to.equal("00:02");
     expect(formatCountdown(1)).to.equal("00:01");
   });
+
+  it("formats large time values correctly", () => {
+    expect(formatCountdown(3_600_000)).to.equal("60:00");
+    expect(formatCountdown(7_200_000)).to.equal("120:00");
+  });
+
+  it("handles negative values by clamping to zero", () => {
+    expect(formatCountdown(-1000)).to.equal("00:00");
+    expect(formatCountdown(-60_000)).to.equal("00:00");
+  });
+
+  it("formats exact minute boundaries", () => {
+    expect(formatCountdown(60_000)).to.equal("01:00");
+    expect(formatCountdown(120_000)).to.equal("02:00");
+    expect(formatCountdown(180_000)).to.equal("03:00");
+  });
+
+  it("formats seconds just under minute boundaries", () => {
+    expect(formatCountdown(59_999)).to.equal("01:00");
+    expect(formatCountdown(119_999)).to.equal("02:00");
+  });
+
+  it("formats one second correctly", () => {
+    expect(formatCountdown(1000)).to.equal("00:01");
+  });
+
+  it("formats millisecond precision", () => {
+    expect(formatCountdown(500)).to.equal("00:01");
+    expect(formatCountdown(100)).to.equal("00:01");
+    expect(formatCountdown(1)).to.equal("00:01");
+  });
+
+  it("formats 10-minute plus times with correct padding", () => {
+    expect(formatCountdown(600_000)).to.equal("10:00");
+    expect(formatCountdown(659_000)).to.equal("10:59");
+  });
 });
 
 describe("getCountdownState", () => {

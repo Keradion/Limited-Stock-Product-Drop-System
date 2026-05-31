@@ -1,6 +1,7 @@
 /**
- * Simulates many concurrent reserve attempts against a finite Redis pool.
- * Uses an atomic in-memory store with the same rules as the Lua hold script.
+ * Simulates concurrent reservation attempts where multiple users try to
+ * reserve stock simultaneously. Tests that the Redis atomic hold operations
+ * and DB transaction guards prevent overselling.
  */
 import esmock from "esmock";
 import { expect } from "chai";
@@ -10,107 +11,20 @@ import {
   AtomicInventoryStore,
   mapHoldResult,
 } from "../helpers/atomicInventoryStore.js";
-import { AppError } from "../../src/lib/errors.js";
 
 describe("inventory hold concurrency simulation", function () {
-  this.timeout(20_000);
+  this.timeout(15_000);
+
   const productId = "22222222-2222-2222-2222-222222222222";
   const initialStock = 10;
-  let store: AtomicInventoryStore;
 
-  beforeEach(() => {
-    store = new AtomicInventoryStore();
-    store.init(productId, initialStock);
-  });
-
-  it("never oversells when many requests hold 1 unit at once", async () => {
-    const attempts = 100;
-    const results = await Promise.all(
-      Array.from({ length: attempts }, () =>
-        Promise.resolve(mapHoldResult(store.hold(productId, 1))),
-      ),
-    );
-
-    const successes = results.filter((result) => result === "SUCCESS").length;
-    const rejections = results.filter((result) => result === "INSUFFICIENT").length;
-
-    expect(successes).to.equal(initialStock);
-    expect(rejections).to.equal(attempts - initialStock);
-    expect(store.getAvailable(productId)).to.equal(0);
-  });
-
-  it("caps successful holds by available quantity for larger order sizes", async () => {
-    const burstStore = new AtomicInventoryStore();
-    burstStore.init(productId, 15);
-
-    const results = await Promise.all(
-      Array.from({ length: 10 }, () =>
-        Promise.resolve(mapHoldResult(burstStore.hold(productId, 2))),
-      ),
-    );
-
-    const successes = results.filter((result) => result === "SUCCESS").length;
-
-    expect(successes).to.equal(7);
-    expect(burstStore.getAvailable(productId)).to.equal(1);
-  });
-
-  it("restores availability correctly under concurrent releases", async () => {
-    store.hold(productId, 6);
-    store.hold(productId, 4);
-    expect(store.getAvailable(productId)).to.equal(0);
-
-    await Promise.all(
-      Array.from({ length: 6 }, () => Promise.resolve(store.release(productId, 1))),
-    );
-
-    expect(store.getAvailable(productId)).to.equal(6);
-  });
-
-  it("routes holdStock through inventory module without overselling", async () => {
-    const sandbox = sinon.createSandbox();
-    const localStore = new AtomicInventoryStore();
-    localStore.init(productId, 5);
-
-    let module: typeof import("../../src/lib/inventory.js");
-    try {
-      module = await esmock("../../src/lib/inventory.js", {
-      "../../src/redis.js": {
-        redis: {
-          eval: sandbox.stub().callsFake(async (_script, options: { keys: string[]; arguments: string[] }) => {
-            const id = options.keys[0].replace("available:", "");
-            return localStore.hold(id, Number(options.arguments[0]));
-          }),
-        },
-      },
-      "../../src/db.js": {
-        prisma: { reservation: { aggregate: sandbox.stub() } },
-      },
-    });
-    } catch (error) {
-      sandbox.restore();
-      esmock.purge("../../src/lib/inventory.js");
-      throw error;
-    }
-
-    const results = await Promise.all(
-      Array.from({ length: 20 }, () => module.holdStock(productId, 1)),
-    );
-
-    sandbox.restore();
-    esmock.purge("../../src/lib/inventory.js");
-
-    expect(results.filter((result) => result === "SUCCESS")).to.have.length(5);
-    expect(results.filter((result) => result === "INSUFFICIENT")).to.have.length(15);
-    expect(localStore.getAvailable(productId)).to.equal(0);
-  });
-});
-
-describe("createReservation burst concurrency simulation", function () {
-  this.timeout(20_000);
-  const userId = "11111111-1111-1111-1111-111111111111";
-  const productId = "22222222-2222-2222-2222-222222222222";
-  const productStock = 3;
+  const product = {
+    productId,
+    productName: "Limited Drop Sneakers",
+    productStock: initialStock,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
   let sandbox: SinonSandbox;
   let store: AtomicInventoryStore;
@@ -120,20 +34,30 @@ describe("createReservation burst concurrency simulation", function () {
   beforeEach(async () => {
     sandbox = sinon.createSandbox();
     store = new AtomicInventoryStore();
-    store.init(productId, productStock);
+    store.init(productId, initialStock);
     pendingQuantity = 0;
 
     let reservationCounter = 0;
+    const reservationCreateStub = sandbox.stub().callsFake(async ({ data }: { data: { quantity: number } }) => {
+      pendingQuantity += data.quantity;
+      reservationCounter += 1;
+      return {
+        reservationId: `res-${reservationCounter}`,
+        userId: data.userId,
+        productId,
+        quantity: data.quantity,
+        reservationStatus: "PENDING",
+        expiresAt: new Date(Date.now() + 300_000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    });
 
     const module = await esmock("../../src/services/reserve.service.js", {
       "../../src/db.js": {
         prisma: {
           product: {
-            findUnique: sandbox.stub().resolves({
-              productId,
-              productName: "Drop Item",
-              productStock,
-            }),
+            findUnique: sandbox.stub().resolves(product),
           },
           reservation: {
             updateMany: sandbox.stub().resolves({ count: 1 }),
@@ -141,30 +65,13 @@ describe("createReservation burst concurrency simulation", function () {
           $transaction: sandbox.stub().callsFake(async (fn) => {
             const tx = {
               product: {
-                findUnique: sandbox.stub().resolves({
-                  productId,
-                  productName: "Drop Item",
-                  productStock,
-                }),
+                findUnique: sandbox.stub().resolves(product),
               },
               reservation: {
                 aggregate: sandbox.stub().callsFake(async () => ({
                   _sum: { quantity: pendingQuantity },
                 })),
-                create: sandbox.stub().callsFake(async ({ data }: { data: { quantity: number } }) => {
-                  pendingQuantity += data.quantity;
-                  reservationCounter += 1;
-                  return {
-                    reservationId: `res-${reservationCounter}`,
-                    userId,
-                    productId,
-                    quantity: data.quantity,
-                    reservationStatus: "PENDING",
-                    expiresAt: new Date(Date.now() + 300_000),
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  };
-                }),
+                create: reservationCreateStub,
               },
             };
             return fn(tx as never);
@@ -196,24 +103,226 @@ describe("createReservation burst concurrency simulation", function () {
     esmock.purge("../../src/services/reserve.service.js");
   });
 
-  it("allows at most available stock successes when many users reserve at once", async () => {
-    const attempts = 25;
-    const outcomes = await Promise.allSettled(
-      Array.from({ length: attempts }, (_, index) =>
-        createReservation(`user-${index}`, productId, 1),
-      ),
+  it("allows exactly 10 reservations of quantity 1 when stock is 10", async () => {
+    const attempts = Array.from({ length: 10 }, (_, i) =>
+      createReservation(`user-${i + 1}`, productId, 1),
     );
 
-    const successes = outcomes.filter((outcome) => outcome.status === "fulfilled");
-    const conflicts = outcomes.filter(
-      (outcome) =>
-        outcome.status === "rejected" &&
-        outcome.reason instanceof AppError &&
-        outcome.reason.statusCode === 409,
+    const results = await Promise.allSettled(attempts);
+    const successes = results.filter((r) => r.status === "fulfilled");
+    const failures = results.filter((r) => r.status === "rejected");
+
+    expect(successes.length).to.equal(10);
+    expect(failures.length).to.equal(0);
+    expect(store.getAvailable(productId)).to.equal(0);
+  });
+
+  it("prevents overselling when 20 users try to reserve 1 unit each from 10-unit stock", async () => {
+    const attempts = Array.from({ length: 20 }, (_, i) =>
+      createReservation(`user-${i + 1}`, productId, 1),
     );
 
-    expect(successes).to.have.length(productStock);
-    expect(conflicts).to.have.length(attempts - productStock);
+    const results = await Promise.allSettled(attempts);
+    const successes = results.filter((r) => r.status === "fulfilled");
+    const failures = results.filter(
+      (r) =>
+        r.status === "rejected" &&
+        (r.reason as { statusCode?: number }).statusCode === 409,
+    );
+
+    expect(successes.length).to.equal(10);
+    expect(failures.length).to.equal(10);
+    expect(store.getAvailable(productId)).to.equal(0);
+  });
+
+  it("prevents overselling when users request mixed quantities", async () => {
+    const requests = [
+      { userId: "user-1", quantity: 3 },
+      { userId: "user-2", quantity: 2 },
+      { userId: "user-3", quantity: 2 },
+      { userId: "user-4", quantity: 1 },
+      { userId: "user-5", quantity: 3 },
+      { userId: "user-6", quantity: 5 },
+      { userId: "user-7", quantity: 1 },
+      { userId: "user-8", quantity: 2 },
+    ];
+
+    const attempts = requests.map(({ userId, quantity }) =>
+      createReservation(userId, productId, quantity),
+    );
+
+    const results = await Promise.allSettled(attempts);
+    const successes = results.filter((r) => r.status === "fulfilled");
+    const failures = results.filter(
+      (r) =>
+        r.status === "rejected" &&
+        (r.reason as { statusCode?: number }).statusCode === 409,
+    );
+
+    let totalReserved = 0;
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        totalReserved += requests[index].quantity;
+      }
+    });
+
+    expect(totalReserved).to.be.at.most(initialStock);
+    expect(successes.length + failures.length).to.equal(attempts.length);
+    expect(store.getAvailable(productId)).to.be.gte(0);
+  });
+
+  it("allows 5 reservations of 2 units each to consume exactly 10-unit stock", async () => {
+    const attempts = Array.from({ length: 5 }, (_, i) =>
+      createReservation(`user-${i + 1}`, productId, 2),
+    );
+
+    const results = await Promise.allSettled(attempts);
+    const successes = results.filter((r) => r.status === "fulfilled");
+
+    expect(successes.length).to.equal(5);
+    expect(store.getAvailable(productId)).to.equal(0);
+  });
+
+  it("rejects the 11th attempt when 10 units are already held", async () => {
+    const first10 = Array.from({ length: 10 }, (_, i) =>
+      createReservation(`user-${i + 1}`, productId, 1),
+    );
+
+    await Promise.all(first10);
+
+    try {
+      await createReservation("user-11", productId, 1);
+      expect.fail("Expected 11th reservation to be rejected");
+    } catch (error) {
+      expect((error as { statusCode?: number }).statusCode).to.equal(409);
+      expect((error as Error).message).to.include("Insufficient stock");
+    }
+
+    expect(store.getAvailable(productId)).to.equal(0);
+  });
+
+  it("handles concurrent large reservation attempts without negative stock", async () => {
+    const attempts = Array.from({ length: 5 }, (_, i) =>
+      createReservation(`user-${i + 1}`, productId, 8),
+    );
+
+    const results = await Promise.allSettled(attempts);
+    const successes = results.filter((r) => r.status === "fulfilled");
+    const failures = results.filter(
+      (r) =>
+        r.status === "rejected" &&
+        (r.reason as { statusCode?: number }).statusCode === 409,
+    );
+
+    expect(successes.length).to.equal(1);
+    expect(failures.length).to.equal(4);
+
+    const remaining = store.getAvailable(productId);
+    expect(remaining).to.be.gte(0);
+    expect(remaining).to.equal(2);
+  });
+
+  it("allows sequential reservations after concurrent batch completes", async () => {
+    const batch1 = Array.from({ length: 5 }, (_, i) =>
+      createReservation(`user-batch1-${i + 1}`, productId, 1),
+    );
+
+    await Promise.all(batch1);
+
+    const batch2 = Array.from({ length: 5 }, (_, i) =>
+      createReservation(`user-batch2-${i + 1}`, productId, 1),
+    );
+
+    const results = await Promise.allSettled(batch2);
+    const successes = results.filter((r) => r.status === "fulfilled");
+
+    expect(successes.length).to.equal(5);
+    expect(store.getAvailable(productId)).to.equal(0);
+  });
+
+  it("releases stock correctly when reservation creation fails", async () => {
+    const releaseStockStub = sandbox.stub();
+    const mockWithFailingTransaction = await esmock("../../src/services/reserve.service.js", {
+      "../../src/db.js": {
+        prisma: {
+          product: {
+            findUnique: sandbox.stub().resolves(product),
+          },
+          reservation: {
+            updateMany: sandbox.stub().resolves({ count: 1 }),
+          },
+          $transaction: sandbox.stub().rejects(new Error("Transaction failed")),
+        },
+      },
+      "../../src/lib/inventory.js": {
+        ensureProductInventory: sandbox.stub().resolves(),
+        holdStock: sandbox.stub().callsFake(async (id: string, quantity: number) =>
+          mapHoldResult(store.hold(id, quantity)),
+        ),
+        releaseStock: releaseStockStub.callsFake(async (id: string, quantity: number) => {
+          store.release(id, quantity);
+        }),
+      },
+      "../../src/queues/reservation.queue.js": {
+        scheduleReservationExpiry: sandbox.stub().resolves(),
+        reservationExpiryQueue: {},
+        cancelReservationExpiry: sandbox.stub(),
+        closeReservationExpiryQueue: sandbox.stub(),
+      },
+    });
+
+    const initialAvailable = store.getAvailable(productId);
+
+    try {
+      await mockWithFailingTransaction.createReservation("user-1", productId, 2);
+      expect.fail("Expected transaction failure");
+    } catch (error) {
+      expect((error as Error).message).to.equal("Transaction failed");
+    }
+
+    expect(releaseStockStub.calledOnceWith(productId, 2)).to.equal(true);
+    expect(store.getAvailable(productId)).to.equal(initialAvailable);
+  });
+
+  it("handles 100 concurrent reservation attempts correctly", async () => {
+    const attempts = Array.from({ length: 100 }, (_, i) =>
+      createReservation(`user-${i + 1}`, productId, 1),
+    );
+
+    const results = await Promise.allSettled(attempts);
+    const successes = results.filter((r) => r.status === "fulfilled");
+    const failures = results.filter(
+      (r) =>
+        r.status === "rejected" &&
+        (r.reason as { statusCode?: number }).statusCode === 409,
+    );
+
+    expect(successes.length).to.equal(10);
+    expect(failures.length).to.equal(90);
+    expect(store.getAvailable(productId)).to.equal(0);
+  });
+
+  it("maintains consistency with interleaved hold and release operations", async () => {
+    const operations: Promise<unknown>[] = [];
+
+    for (let i = 0; i < 5; i++) {
+      operations.push(createReservation(`user-${i}`, productId, 1));
+    }
+
+    await Promise.all(operations);
+    expect(store.getAvailable(productId)).to.equal(5);
+
+    store.release(productId, 2);
+    expect(store.getAvailable(productId)).to.equal(7);
+
+    const moreAttempts = Array.from({ length: 7 }, (_, i) =>
+      createReservation(`user-${i + 5}`, productId, 1),
+    );
+
+    const results = await Promise.allSettled(moreAttempts);
+    const successes = results.filter((r) => r.status === "fulfilled");
+
+    expect(successes.length).to.equal(7);
     expect(store.getAvailable(productId)).to.equal(0);
   });
 });

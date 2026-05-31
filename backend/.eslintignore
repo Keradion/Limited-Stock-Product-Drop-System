@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Prisma
+prisma/migrations/
+.prisma/
+
+# Generated files
+prisma/client/
