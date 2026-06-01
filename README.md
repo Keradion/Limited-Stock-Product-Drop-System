@@ -1,13 +1,6 @@
 # Limited Stock Product Drop System
 
-![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
-![React](https://img.shields.io/badge/React-18.x-blue.svg)
-![Express](https://img.shields.io/badge/Express-4.x-lightgrey.svg)
-![Prisma](https://img.shields.io/badge/Prisma-ORM-blueviolet.svg)
-![Redis](https://img.shields.io/badge/Redis-In--Memory-red.svg)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue.svg)
-
-Monorepo for a high-concurrency limited-product drop: **Express API** + **React UI**.
+Monorepo for a limited-product drop: **Express API** + **React UI**.
 
 ## Project layout
 
@@ -20,13 +13,6 @@ Monorepo for a high-concurrency limited-product drop: **Express API** + **React 
 ├── package.json      # Root scripts (delegates to backend / frontend)
 └── README.md
 ```
-
-## Prerequisites
-
-Before running the application, make sure you have the following installed:
-- **Node.js** (v18 or higher)
-- **PostgreSQL** (running and accessible)
-- **Redis** (running and accessible)
 
 ## Quick start
 
@@ -77,6 +63,36 @@ Sign in with `alice@example.com` / `password123`.
 | `npm run db:seed` | Seed database |
 
 See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md) for details.
+
+## Deploy on Pxxl
+
+### Backend (base directory: `backend`, port `3001`)
+
+| Step | Command / value |
+|------|------------------|
+| Install | `npm ci --legacy-peer-deps` |
+| Build | `npm run build` |
+| Start | `npm run start:prod` |
+
+Import env from `backend/.env.example` (fill real values). **Redis Cloud:** use `rediss://` in `REDIS_URL`, not `redis://`.
+
+After first deploy, run migrations once (Pxxl shell or local with prod `DATABASE_URL`):
+
+```bash
+cd backend && npx prisma migrate deploy
+```
+
+Health check: `GET /health` (expect JSON, not HTML).
+
+### Frontend (base directory: `frontend`)
+
+| Step | Command |
+|------|---------|
+| Install | `npm ci` |
+| Build | `npm run build` |
+| Start | `npm start` |
+
+Set `VITE_API_BASE_URL` to your backend URL (no trailing slash). Add that URL to backend `CORS_ORIGIN` when the frontend is live.
 
 ---
 
@@ -268,16 +284,9 @@ The codebase has **automated tests** that verify all of this works correctly —
 | Architecture diagram | [docs/architecture.md](docs/architecture.md) (Mermaid) |
 | ER diagram | [DrawSQL — Limited Stock Product Drop System](https://drawsql.app/teams/daniel-shitaye/diagrams/limted-stock-product-drop-system) |
 
-## Stack (reference)
+## Stack 
 
 - **Redis Lua** — atomic holds  
 - **Postgres + Prisma** — reservations, orders, audit  
 - **BullMQ** — reservation expiry (`RESERVATION_TTL_MS`, default 5 min)  
 - **React + Vite** — drop page, checkout, stock polling
-
-Deployment note: frontend API base URL should point to `https://stock-backend.pxxl.click`.
-Redeploy note: refreshed on 2026-05-31.
-Deploy note: keep backend CORS aligned with the active frontend origin.
-Deploy note: refreshed again on 2026-05-31.
- 
- 

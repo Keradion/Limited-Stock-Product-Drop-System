@@ -6,8 +6,12 @@ declare global {
 }
 
 function createRedisClient(): RedisClientType {
+  const url = process.env.REDIS_URL;
   const client = createClient({
-    url: process.env.REDIS_URL,
+    url,
+    socket: url?.startsWith("rediss://")
+      ? { tls: true, rejectUnauthorized: true }
+      : undefined,
   });
 
   client.on("error", (error) => {

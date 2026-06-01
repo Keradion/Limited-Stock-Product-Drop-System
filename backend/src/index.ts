@@ -16,8 +16,8 @@ async function start() {
 
   const expiryWorker = startReservationExpiryWorker();
   const app = createApp();
-  const server = app.listen(config.port, () => {
-    logger.info(`Server running on http://localhost:${config.port}`);
+  const server = app.listen(config.port, "0.0.0.0", () => {
+    logger.info(`Server running on port ${config.port}`);
   });
 
   async function gracefulShutdown(signal: string) {
