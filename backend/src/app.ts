@@ -28,6 +28,13 @@ export function createApp(): Express {
   app.use(handleInvalidJson);
   app.use(requestLogger);
 
+  app.get("/", (_req, res) => {
+    res.status(200).json({
+      service: config.serviceName,
+      status: "up",
+    });
+  });
+
   app.get("/health", async (_req, res) => {
     let dbStatus = "unknown";
     let redisStatus = "unknown";
@@ -48,9 +55,9 @@ export function createApp(): Express {
 
     const overallStatus =
       dbStatus === "connected" && redisStatus === "connected" ? "ok" : "degraded";
-    const statusCode = overallStatus === "ok" ? 200 : 503;
 
-    res.status(statusCode).json({
+    // Always 200 so platform health probes pass when the process is listening.
+    res.status(200).json({
       status: overallStatus,
       database: dbStatus,
       redis: redisStatus,

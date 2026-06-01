@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/index.js",
-    "start:prod": "node dist/index.js",
+    "start:prod": "prisma migrate deploy && node dist/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.21.1",
+    "prisma": "^5.21.1",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.77.6",
     "cors": "^2.8.6",
@@ -51,7 +52,6 @@
     "eslint": "^9.0.0",
     "esmock": "^2.7.6",
     "mocha": "^11.7.5",
-    "prisma": "^5.21.1",
     "sinon": "^21.0.1",
     "tsx": "^4.7.1",
     "typescript": "^5.4.2"

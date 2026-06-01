@@ -1,5 +1,6 @@
 import "dotenv/config";
 import type { SignOptions } from "jsonwebtoken";
+import { resolveRedisUrl } from "../lib/redisConfig.js";
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -50,7 +51,7 @@ export const config = {
   serviceName: requireEnv("SERVICE_NAME"),
   requestLogSkipPaths: parseListEnv("REQUEST_LOG_SKIP_PATHS"),
   redis: {
-    url: requireEnv("REDIS_URL"),
+    url: resolveRedisUrl(requireEnv("REDIS_URL")),
   },
   jwt: {
     secret: requireEnv("JWT_SECRET"),

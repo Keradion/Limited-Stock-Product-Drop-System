@@ -1,7 +1,9 @@
+import type { Worker } from "bullmq";
 import { config } from "./config/env.js";
 import { prisma } from "./db.js";
 import { logger } from "./lib/logger.js";
 import { connectRedis, disconnectRedis } from "./redis.js";
+import type { ReservationExpiryJobData } from "./queues/reservation.queue.js";
 
 async function start() {
   // Redis must be connected before app routes load — rate limiters init their store on import.
@@ -14,7 +16,17 @@ async function start() {
     stopReservationExpiryWorker,
   } = await import("./workers/reservation.worker.js");
 
-  const expiryWorker = startReservationExpiryWorker();
+  let expiryWorker: Worker<ReservationExpiryJobData> | null = null;
+  try {
+    expiryWorker = startReservationExpiryWorker();
+    logger.info("Reservation expiry worker started.");
+  } catch (err) {
+    logger.error(
+      "Reservation expiry worker failed to start; API will run without it",
+      { err },
+    );
+  }
+
   const app = createApp();
   const server = app.listen(config.port, "0.0.0.0", () => {
     logger.info(`Server running on port ${config.port}`);
@@ -26,8 +38,10 @@ async function start() {
     server.close(async () => {
       logger.info("Express server closed.");
       try {
-        await stopReservationExpiryWorker(expiryWorker);
-        logger.info("Reservation expiry worker stopped.");
+        if (expiryWorker) {
+          await stopReservationExpiryWorker(expiryWorker);
+          logger.info("Reservation expiry worker stopped.");
+        }
         await closeReservationExpiryQueue();
         logger.info("Reservation expiry queue closed.");
         await disconnectRedis();

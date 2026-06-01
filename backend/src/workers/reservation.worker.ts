@@ -1,5 +1,6 @@
 import { Worker } from "bullmq";
 import { config } from "../config/env.js";
+import { getBullMqConnection } from "../lib/redisConfig.js";
 import { logger } from "../lib/logger.js";
 import { expireReservation } from "../services/reservation-expiry.service.js";
 import type { ReservationExpiryJobData } from "../queues/reservation.queue.js";
@@ -13,7 +14,7 @@ export function startReservationExpiryWorker(): Worker<ReservationExpiryJobData>
       await expireReservation(job.data.reservationId);
     },
     {
-      connection: { url: config.redis.url },
+      connection: getBullMqConnection(),
     },
   );
 

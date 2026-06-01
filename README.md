@@ -66,6 +66,8 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 
 ## Deploy on Pxxl
 
+Full checklist: [docs/DEPLOY-PXXL.md](docs/DEPLOY-PXXL.md)
+
 ### Backend (base directory: `backend`, port `3001`)
 
 | Step | Command / value |
@@ -76,13 +78,9 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 
 Import env from `backend/.env.example` (fill real values). **Redis Cloud:** use `rediss://` in `REDIS_URL`, not `redis://`.
 
-After first deploy, run migrations once (Pxxl shell or local with prod `DATABASE_URL`):
+`npm run start:prod` runs migrations automatically. Health check: `GET /health` (JSON, HTTP 200).
 
-```bash
-cd backend && npx prisma migrate deploy
-```
-
-Health check: `GET /health` (expect JSON, not HTML).
+**Pxxl Postgres:** `DATABASE_URL` must include `&sslmode=require`. **Redis Cloud:** `REDIS_URL` must use `rediss://`.
 
 ### Frontend (base directory: `frontend`)
 

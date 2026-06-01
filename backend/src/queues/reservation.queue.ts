@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import { config } from "../config/env.js";
+import { getBullMqConnection } from "../lib/redisConfig.js";
 
 export type ReservationExpiryJobData = {
   reservationId: string;
@@ -8,7 +9,7 @@ export type ReservationExpiryJobData = {
 export const reservationExpiryQueue = new Queue<ReservationExpiryJobData>(
   config.reservation.expiryQueueName,
   {
-    connection: { url: config.redis.url },
+    connection: getBullMqConnection(),
   },
 );
 
