@@ -6,7 +6,7 @@ services:
     name: limited-stock-drop-api
     runtime: node
     rootDir: backend
-    buildCommand: npm ci --legacy-peer-deps && npm run build
+    buildCommand: NPM_CONFIG_PRODUCTION=false npm ci --legacy-peer-deps && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /health
     envVars:

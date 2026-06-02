@@ -71,7 +71,7 @@ See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/REA
 | Setting | Value |
 |---------|--------|
 | **Root directory** | `backend` |
-| **Build** | `npm ci --legacy-peer-deps && npm run build` |
+| **Build** | `NPM_CONFIG_PRODUCTION=false npm ci --legacy-peer-deps && npm run build` |
 | **Start** | `npm run start:prod` |
 | **Health check** | `/health` |
 

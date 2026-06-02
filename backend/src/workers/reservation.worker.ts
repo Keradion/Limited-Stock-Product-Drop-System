@@ -1,4 +1,4 @@
-import { Worker } from "bullmq";
+import { Worker, type Job } from "bullmq";
 import { config } from "../config/env.js";
 import { getBullMqConnection } from "../lib/redisConfig.js";
 import { logger } from "../lib/logger.js";
@@ -10,7 +10,7 @@ export { expireReservation } from "../services/reservation-expiry.service.js";
 export function startReservationExpiryWorker(): Worker<ReservationExpiryJobData> {
   const worker = new Worker<ReservationExpiryJobData>(
     config.reservation.expiryQueueName,
-    async (job) => {
+    async (job: Job<ReservationExpiryJobData>) => {
       await expireReservation(job.data.reservationId);
     },
     {

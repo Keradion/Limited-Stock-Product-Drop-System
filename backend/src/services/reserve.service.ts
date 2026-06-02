@@ -7,6 +7,7 @@ import {
 } from "../lib/inventory.js";
 import { scheduleReservationExpiry } from "../queues/reservation.queue.js";
 import { config } from "../config/env.js";
+import type { DbTransaction } from "../types/prisma.js";
 
 export type CreateReservationResult = {
   reservationId: string;
@@ -46,7 +47,7 @@ export async function createReservation(
 
   try {
     // Stage 4: Persist reservation after verifying DB stock inside one transaction
-    const reservation = await prisma.$transaction(async (tx) => {
+    const reservation = await prisma.$transaction(async (tx: DbTransaction) => {
       const currentProduct = await tx.product.findUnique({
         where: { productId },
       });

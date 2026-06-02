@@ -44,7 +44,7 @@ export async function listReservations(
   ]);
 
   return buildPaginatedResult(
-    reservations.map((reservation) => ({
+    reservations.map((reservation): ReservationListItem => ({
       reservationId: reservation.reservationId,
       reservationStatus: reservation.reservationStatus,
       productId: reservation.productId,

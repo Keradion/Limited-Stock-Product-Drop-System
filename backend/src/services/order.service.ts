@@ -42,7 +42,7 @@ export async function listOrders(
   ]);
 
   return buildPaginatedResult(
-    orders.map((order) => ({
+    orders.map((order): OrderListItem => ({
       orderId: order.orderId,
       orderStatus: order.orderStatus,
       productId: order.productId,

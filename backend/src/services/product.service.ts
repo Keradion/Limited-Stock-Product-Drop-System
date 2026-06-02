@@ -117,7 +117,7 @@ export async function listProducts(
   ]);
 
   return buildPaginatedResult(
-    products.map((product) => ({
+    products.map((product): ProductListItem => ({
       ...product,
       createdAt: product.createdAt.toISOString(),
     })),

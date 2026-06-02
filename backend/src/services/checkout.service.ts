@@ -1,5 +1,6 @@
 import { prisma } from "../db.js";
 import { AppError } from "../lib/errors.js";
+import type { DbTransaction } from "../types/prisma.js";
 import { cancelReservationExpiry } from "../queues/reservation.queue.js";
 
 export type CheckoutResult = {
@@ -38,7 +39,7 @@ export async function checkoutReservation(
   }
 
   // Stage 2: Atomically complete reservation, deduct stock, and create order
-  const order = await prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx: DbTransaction) => {
     const completed = await tx.reservation.updateMany({
       where: {
         reservationId,

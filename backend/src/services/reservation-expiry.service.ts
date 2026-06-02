@@ -4,10 +4,11 @@
 import { prisma } from "../db.js";
 import { logger } from "../lib/logger.js";
 import { releaseStock } from "../lib/inventory.js";
+import type { DbTransaction } from "../types/prisma.js";
 
 export async function expireReservation(reservationId: string): Promise<void> {
   // Stage 1: Expire the reservation if still pending (safe under concurrency with checkout)
-  const expired = await prisma.$transaction(async (tx) => {
+  const expired = await prisma.$transaction(async (tx: DbTransaction) => {
     const result = await tx.reservation.updateMany({
       where: {
         reservationId,
