@@ -1,0 +1,24 @@
+# Render Blueprint — backend API
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: limited-stock-drop-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci --legacy-peer-deps && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: SERVICE_NAME
+        value: limited-stock-drop
+      - key: REQUEST_LOG_SKIP_PATHS
+        value: /health,/metrics
+      - key: PORT
+        value: 10000
+      # Set in Render dashboard (secrets):
+      # DATABASE_URL, REDIS_URL, JWT_SECRET, CORS_ORIGIN, rate limits, etc.

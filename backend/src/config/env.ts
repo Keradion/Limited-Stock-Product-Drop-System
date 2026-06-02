@@ -44,7 +44,7 @@ export const config = {
   corsOrigin: parseCorsOrigin(
     optionalEnv(
       "CORS_ORIGIN",
-      "http://localhost:5173,https://front-stock.pxxl.click,https://stockfrontend.pxxl.click",
+      "http://localhost:5173",
     ),
   ),
   logLevel: requireEnv("LOG_LEVEL"),

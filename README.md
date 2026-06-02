@@ -64,33 +64,34 @@ Sign in with `alice@example.com` / `password123`.
 
 See [backend/README.md](backend/README.md) and [frontend/README.md](frontend/README.md) for details.
 
-## Deploy on Pxxl
+## Deploy on Render
 
-Full checklist: [docs/DEPLOY-PXXL.md](docs/DEPLOY-PXXL.md)
+### Backend Web Service
 
-### Backend (base directory: `backend`, port `3001`)
+| Setting | Value |
+|---------|--------|
+| **Root directory** | `backend` |
+| **Build** | `npm ci --legacy-peer-deps && npm run build` |
+| **Start** | `npm run start:prod` |
+| **Health check** | `/health` |
 
-| Step | Command / value |
-|------|------------------|
-| Install | `npm ci --legacy-peer-deps` |
-| Build | `npm run build` |
-| Start | `npm run start:prod` |
+Copy env vars from `backend/.env.example` / your local `backend/.env`.
 
-Import env from `backend/.env.example` (fill real values). **Redis Cloud:** use `rediss://` in `REDIS_URL`, not `redis://`.
+- **Postgres (Render):** external URL + `?schema=public&sslmode=require` (or internal URL if API and DB are both on Render).
+- **Redis Cloud:** `rediss://` in `REDIS_URL`.
+- **PORT:** use Render’s value (often `10000`).
 
-`npm run start:prod` runs migrations automatically. Health check: `GET /health` (JSON, HTTP 200).
+Or use the repo [`render.yaml`](render.yaml) blueprint (`rootDir: backend`).
 
-**Pxxl Postgres:** `DATABASE_URL` must include `&sslmode=require`. **Redis Cloud:** `REDIS_URL` must use `rediss://`.
+### Frontend (optional second service)
 
-### Frontend (base directory: `frontend`)
+| Setting | Value |
+|---------|--------|
+| **Root directory** | `frontend` |
+| **Build** | `npm ci && npm run build` |
+| **Start** | `npm start` |
 
-| Step | Command |
-|------|---------|
-| Install | `npm ci` |
-| Build | `npm run build` |
-| Start | `npm start` |
-
-Set `VITE_API_BASE_URL` to your backend URL (no trailing slash). Add that URL to backend `CORS_ORIGIN` when the frontend is live.
+Set `VITE_API_BASE_URL` to your Render backend URL.
 
 ---
 
