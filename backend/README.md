@@ -469,7 +469,7 @@ curl -X POST http://localhost:3001/api/checkout \
 
 ---
 
-## Project Structure
+## Project Folder Structure
 
 ```
 src/

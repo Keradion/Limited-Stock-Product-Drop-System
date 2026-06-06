@@ -37,19 +37,19 @@ async function main() {
 
   const products = await Promise.all([
     prisma.product.create({
-      data: { productName: "Nike Air Drop Exclusive", productStock: 10 },
+      data: { productName: "Nike Air Drop Exclusive", productStock: 100 },
     }),
     prisma.product.create({
-      data: { productName: "Supreme Box Logo Tee", productStock: 25 },
+      data: { productName: "Supreme Box Logo Tee", productStock: 100 },
     }),
     prisma.product.create({
-      data: { productName: "PlayStation 5 Pro Drop", productStock: 5 },
+      data: { productName: "PlayStation 5 Pro Drop", productStock: 100 },
     }),
     prisma.product.create({
-      data: { productName: "Travis Scott Jordan 1", productStock: 8 },
+      data: { productName: "Travis Scott Jordan 1", productStock: 100 },
     }),
     prisma.product.create({
-      data: { productName: "Vintage Rolex Submariner", productStock: 2 },
+      data: { productName: "Vintage Rolex Submariner", productStock: 100 },
     }),
   ]);
 

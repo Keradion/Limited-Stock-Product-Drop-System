@@ -13,6 +13,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:reset-stock": "tsx prisma/reset-stock.ts",
     "test": "mocha --require tsx tests/setup.ts tests/**/*.test.ts",
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --fix",
